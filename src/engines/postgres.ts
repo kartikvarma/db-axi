@@ -47,7 +47,8 @@ class PostgresConnection implements Connection {
     `);
     return res.rows.map((r) => ({
       name: r.name,
-      rows: Number(r.rows),
+      // reltuples is -1 until ANALYZE; treat as unknown → 0 for display
+      rows: Math.max(0, Number(r.rows) || 0),
       columns: Number(r.columns),
     }));
   }

@@ -32,19 +32,20 @@ class MySqlConnection implements Connection {
   }
 
   async tables(): Promise<TableInfo[]> {
+    // Avoid bare alias `rows` (reserved-ish in some MySQL modes)
     const [rows] = await this.conn.query(
-      `SELECT table_name as name,
-              table_rows as rows,
-              (SELECT count(*) FROM information_schema.columns c
-               WHERE c.table_schema = t.table_schema AND c.table_name = t.table_name) as columns
+      `SELECT t.table_name AS name,
+              t.table_rows AS row_est,
+              (SELECT COUNT(*) FROM information_schema.columns c
+               WHERE c.table_schema = t.table_schema AND c.table_name = t.table_name) AS col_count
        FROM information_schema.tables t
-       WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'
+       WHERE t.table_schema = DATABASE() AND t.table_type = 'BASE TABLE'
        ORDER BY 1`,
     );
-    return (rows as { name: string; rows: number; columns: number }[]).map((r) => ({
+    return (rows as { name: string; row_est: number; col_count: number }[]).map((r) => ({
       name: r.name,
-      rows: Number(r.rows) || 0,
-      columns: Number(r.columns) || 0,
+      rows: Math.max(0, Number(r.row_est) || 0),
+      columns: Number(r.col_count) || 0,
     }));
   }
 

@@ -7,25 +7,51 @@ description: AXI-compliant database CLI for PostgreSQL, MySQL, and Oracle. Use f
 
 Autonomous agents use `db-axi` to interact with relational databases. It follows AXI principles: token-efficient TOON output, structured errors, and ambient context.
 
-## Core Commands
+## Workflow
+
+1. **`db-axi home`** (or `db-axi` with no subcommand) — connection summary, table count, largest tables, next-step help.
+2. **`db-axi schema <table>`** — columns, types, PK, indexes, foreign keys.
+3. **`db-axi sample <table>`** or **`db-axi query "…"`** — peek data or run read-only SQL.
+
+## Core commands
 
 ### `db-axi home`
-Always start here if you don't know the schema. It provides a connection summary and lists available tables.
+
+Start here if you do not know the schema. Shows engine, server (password redacted), table summary, and `largest` tables by estimated row count.
+
+### `db-axi tables` / `db-axi databases`
+
+List tables (with row/column estimates) or databases/schemas.
 
 ### `db-axi schema <table_name>`
-Use this to understand the columns, types, and relationships of a specific table.
+
+Columns (`name,type,nullable,pk,default`), indexes, and foreign keys. Missing tables → `NOT_FOUND`.
+
+### `db-axi sample <table_name>`
+
+Safe catalog-checked peek (`--limit`, default 10). Reports `N (complete|capped)`.
 
 ### `db-axi query "<sql>"`
-Execute read-only SQL. Always include a `LIMIT` clause unless you are sure of the result size. `db-axi` clamps results to 1000 rows.
 
-## Read-Only Guarantee
-`db-axi` only allows `SELECT` and `EXPLAIN` statements. It will reject `INSERT`, `UPDATE`, `DELETE`, `DROP`, etc., even if the database user has permissions.
+Read-only SQL only. Prefer an explicit `LIMIT`; the tool still clamps results (default 100, hard max 1000) and reports complete vs capped.
 
-## Connection Resolution
-`db-axi` automatically picks up credentials from environment variables:
+## Read-only guarantee
+
+Allowed: `SELECT`, `EXPLAIN SELECT`, `EXPLAIN (… ) SELECT`, `EXPLAIN ANALYZE SELECT`, `EXPLAIN PLAN FOR SELECT`.
+
+Rejected: `INSERT` / `UPDATE` / `DELETE` / `DROP` / multi-statement / `WITH` (CTEs deferred). Code: `READ_ONLY`.
+
+## Connection resolution
+
+Precedence: flags → `--url` / positional URL → env.
+
 - **Postgres**: `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`
 - **MySQL**: `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`
 - **Oracle**: `ORACLE_HOST`, `ORACLE_PORT`, `ORACLE_USER`, `ORACLE_PASSWORD`, `ORACLE_DATABASE`
 - **Generic**: `DATABASE_URL`
 
-If multiple are present, it tries to infer the engine from the URL scheme or default ports. Use `--engine` to disambiguate.
+If multiple families are set without a URL, pass `--engine`. Row counts are catalog **estimates**.
+
+## Errors
+
+Structured TOON on stdout: `error`, `code`, optional `help`. Common codes: `VALIDATION_ERROR`, `READ_ONLY`, `ENGINE_AMBIGUOUS`, `DRIVER_MISSING`, `CONNECTION_ERROR`, `NOT_FOUND`, `QUERY_ERROR`.

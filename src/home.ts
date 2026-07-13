@@ -7,11 +7,12 @@ export async function homeCommand(
   _flags: Record<string, any>,
 ) {
   const tables = await conn.tables();
-  const totalRows = tables.reduce((sum, t) => sum + (Number.isFinite(t.rows) ? t.rows : 0), 0);
+  const est = (n: number) => (Number.isFinite(n) && n > 0 ? n : 0);
+  const totalRows = tables.reduce((sum, t) => sum + est(t.rows), 0);
   const largest = [...tables]
-    .sort((a, b) => b.rows - a.rows)
+    .sort((a, b) => est(b.rows) - est(a.rows))
     .slice(0, 5)
-    .map((t) => ({ table: t.name, rows: t.rows }));
+    .map((t) => ({ table: t.name, rows: est(t.rows) }));
 
   const userinfo = config.password
     ? `${config.user}:***`

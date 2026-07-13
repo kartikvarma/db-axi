@@ -8,8 +8,8 @@ framework: axi-sdk-js
 
 current_status:
   phase: 5
-  state: in_progress
-  next_step: "Finish residual design fidelity (catalog UX polish, optional IT tests, initial git commit)"
+  state: complete
+  next_step: "None — v1 phase plan complete; optional Oracle IT / publish as follow-ups"
 
 documentation:
   adrs:
@@ -37,15 +37,27 @@ phases:
     items: [args.ts, redact.ts, format.ts, validate.ts, env.ts, connection.ts]
   2_engine_adapters:
     status: complete
-    notes: "sample/query limits, tableExists, catalog PK/index/FK implemented; optional IT tests still open"
+    notes: "sample/query limits, tableExists, catalog PK/index/FK; optional IT via DBAXI_IT_*_URL"
     items: [types.ts, engines/index.ts, engines/postgres.ts, engines/mysql.ts, engines/oracle.ts, engines/errors.ts]
   3_commands_and_bin:
     status: complete
+    notes: "home registered as command; parseFlags in wrap; databases/tables flag dispatch fixed"
     items: [commands/, home.ts, help.ts, bin/db-axi.ts]
   4_agent_integration:
     status: complete
     items: [SKILL.md, README.md]
   5_hardening:
-    status: partial
-    items: [error_codes_CONNECTION_NOT_FOUND_QUERY, env_family_engine, explain_opts, expanded_pure_tests]
-    remaining: [optional_integration_tests, initial_git_commit, readme_example_audit]
+    status: complete
+    items:
+      - error_codes_CONNECTION_NOT_FOUND_QUERY
+      - env_family_engine
+      - explain_opts
+      - expanded_pure_tests
+      - optional_integration_tests
+      - initial_git_commit
+      - readme_example_audit
+      - home_command_registration
+      - parseFlags_in_wrap
+      - tables_databases_flag_dispatch
+      - mysql_tables_alias_fix
+      - reltuples_non_negative

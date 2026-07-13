@@ -82,7 +82,14 @@ function wrap(handler: Function) {
       throw toConnectionError(err);
     }
     try {
-      if (handler === homeCommand) return await handler(conn, config, flags);
+      if (handler === homeCommand) {
+        return await handler(conn, config, flags);
+      }
+      // databases/tables take (conn, flags) — no required positional
+      if (handler === databasesCommand || handler === tablesCommand) {
+        return await handler(conn, flags);
+      }
+      // schema/sample/query take (conn, positional, flags)
       return await handler(conn, rest[0], flags);
     } finally {
       await conn.close();
