@@ -1,0 +1,48 @@
+{
+  "name": "db-axi",
+  "version": "0.1.0",
+  "description": "AXI-compliant database CLI for PostgreSQL, MySQL, and Oracle",
+  "type": "module",
+  "bin": {
+    "db-axi": "./dist/bin/db-axi.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/bin/db-axi.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "axi",
+    "toon",
+    "database",
+    "postgres",
+    "mysql",
+    "oracle",
+    "cli",
+    "agent"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@toon-format/toon": "^2.3.0",
+    "axi-sdk-js": "^0.1.8"
+  },
+  "optionalDependencies": {
+    "mysql2": "^3.11.0",
+    "oracledb": "^6.5.0",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@types/oracledb": "^7.0.1",
+    "@types/pg": "^8.11.6",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.2",
+    "vitest": "^1.6.0"
+  }
+}

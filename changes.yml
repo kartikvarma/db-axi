@@ -1,0 +1,51 @@
+# db-axi Progress Tracker
+# This file tracks the implementation state for agents and collaborators.
+
+project: db-axi
+base_model: sqlite-axi
+language: TypeScript/Node
+framework: axi-sdk-js
+
+current_status:
+  phase: 5
+  state: in_progress
+  next_step: "Finish residual design fidelity (catalog UX polish, optional IT tests, initial git commit)"
+
+documentation:
+  adrs:
+    - docs/adr/0001-language-runtime-and-framework.md
+    - docs/adr/0002-driver-abstraction-and-optional-drivers.md
+    - docs/adr/0003-connection-resolution-and-engine-inference.md
+    - docs/adr/0004-read-only-enforcement.md
+  design: docs/DESIGN.md
+  plan: docs/PLAN.md
+  implementation: docs/IMPLEMENTATION.md
+
+open_questions:
+  1. oracle_schema_mapping: "Approved: Oracle 'database' = schema/user mapping"
+  2. flag_aliases: "Approved: Long-only flags (no short aliases)"
+  3. cte_allowance: "Approved: WITH/CTE statements excluded in v1"
+  4. limit_hard_cap: "Approved: --limit hard max at 1000"
+  5. row_count_strategy: "Approved: Use catalog estimates for counts"
+
+phases:
+  0_scaffolding:
+    status: complete
+    items: [package.json, tsconfig.json, vitest.config.ts, .gitignore, LICENSE]
+  1_pure_core:
+    status: complete
+    items: [args.ts, redact.ts, format.ts, validate.ts, env.ts, connection.ts]
+  2_engine_adapters:
+    status: complete
+    notes: "sample/query limits, tableExists, catalog PK/index/FK implemented; optional IT tests still open"
+    items: [types.ts, engines/index.ts, engines/postgres.ts, engines/mysql.ts, engines/oracle.ts, engines/errors.ts]
+  3_commands_and_bin:
+    status: complete
+    items: [commands/, home.ts, help.ts, bin/db-axi.ts]
+  4_agent_integration:
+    status: complete
+    items: [SKILL.md, README.md]
+  5_hardening:
+    status: partial
+    items: [error_codes_CONNECTION_NOT_FOUND_QUERY, env_family_engine, explain_opts, expanded_pure_tests]
+    remaining: [optional_integration_tests, initial_git_commit, readme_example_audit]
