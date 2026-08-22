@@ -1,5 +1,5 @@
 import { AxiError } from 'axi-sdk-js';
-import { EngineName, ConnectionConfig } from './engines/types.js';
+import { EngineName, ConnectionConfig, SslMode } from './engines/types.js';
 import { readEnv } from './env.js';
 
 export const DEFAULT_PORTS: Record<EngineName, number> = {
@@ -8,6 +8,45 @@ export const DEFAULT_PORTS: Record<EngineName, number> = {
   oracle: 1521,
 };
 
+const ENGINE_ALIASES: Record<string, EngineName> = {
+  postgres: 'postgres',
+  postgresql: 'postgres',
+  pg: 'postgres',
+  mysql: 'mysql',
+  mariadb: 'mysql',
+  oracle: 'oracle',
+};
+
+const SSL_MODES = new Set<SslMode>([
+  'disable',
+  'allow',
+  'prefer',
+  'require',
+  'verify-ca',
+  'verify-full',
+]);
+
+export function normalizeEngine(name: string): EngineName {
+  const mapped = ENGINE_ALIASES[name.toLowerCase()];
+  if (!mapped) {
+    throw new AxiError(`unknown engine: ${name}`, 'VALIDATION_ERROR', [
+      'Pass --engine [postgres|mysql|oracle]',
+    ]);
+  }
+  return mapped;
+}
+
+export function parseSslMode(raw: string | boolean | undefined): SslMode | undefined {
+  if (typeof raw !== 'string' || raw.length === 0) return undefined;
+  const v = raw.toLowerCase() as SslMode;
+  if (!SSL_MODES.has(v)) {
+    throw new AxiError(`unknown sslmode: ${raw}`, 'VALIDATION_ERROR', [
+      'Use --sslmode [disable|allow|prefer|require|verify-ca|verify-full]',
+    ]);
+  }
+  return v;
+}
+
 export function inferEngine(input: {
   engineFlag?: string;
   urlScheme?: string;
@@ -15,12 +54,11 @@ export function inferEngine(input: {
   envFamily?: EngineName;
   installed: EngineName[];
 }): EngineName {
-  if (input.engineFlag) return input.engineFlag as EngineName;
-  
+  if (input.engineFlag) return normalizeEngine(input.engineFlag);
+
   if (input.urlScheme) {
-    if (input.urlScheme === 'postgresql' || input.urlScheme === 'postgres') return 'postgres';
-    if (input.urlScheme === 'mysql' || input.urlScheme === 'mariadb') return 'mysql';
-    if (input.urlScheme === 'oracle') return 'oracle';
+    const fromScheme = ENGINE_ALIASES[input.urlScheme.toLowerCase()];
+    if (fromScheme) return fromScheme;
   }
 
   if (input.port) {
@@ -37,6 +75,15 @@ export function inferEngine(input: {
     'Pass --engine [postgres|mysql|oracle]',
     'Or use a URL with scheme (e.g. postgresql://...)',
   ]);
+}
+
+function sslModeFromUrl(u: URL): string | undefined {
+  const sslmode = u.searchParams.get('sslmode') || u.searchParams.get('ssl-mode');
+  if (sslmode) return sslmode;
+  const ssl = u.searchParams.get('ssl');
+  if (ssl === 'true' || ssl === '1') return 'require';
+  if (ssl === 'false' || ssl === '0') return 'disable';
+  return undefined;
 }
 
 export function resolveConnection(
@@ -60,6 +107,7 @@ export function resolveConnection(
   let user = (flags.user as string) || envConn.user;
   let password = (flags.password as string) || envConn.password;
   let database = (flags.database as string) || (flags.db as string) || envConn.database;
+  let urlSslMode: string | undefined;
 
   if (urlStr) {
     try {
@@ -72,10 +120,15 @@ export function resolveConnection(
       if (u.pathname && u.pathname !== '/') {
         database = database || u.pathname.slice(1);
       }
+      urlSslMode = sslModeFromUrl(u);
+      // Intentionally ignore URL `options=` / extra libpq params (session GUC injection).
     } catch {
       // Ignore invalid URL, fallback to flags/env
     }
   }
+
+  const sslMode =
+    parseSslMode(flags.sslmode) ?? parseSslMode(urlSslMode) ?? parseSslMode(env.PGSSLMODE);
 
   const port = portStr ? Number.parseInt(portStr, 10) : undefined;
   const engine = inferEngine({
@@ -101,6 +154,7 @@ export function resolveConnection(
       user,
       password: password || undefined,
       database: database || undefined,
+      ...(sslMode ? { sslMode } : {}),
     },
     rest,
   };

@@ -22,9 +22,9 @@ npm link   # optional: puts `db-axi` on your PATH
 
 `db-axi` resolves connections in the following order:
 
-1. Flags: `--engine`, `--host`, `--port`, `--user`, `--password`, `--database`.
-2. Connection URL: `--url` or a positional URL (`scheme://...`).
-3. Environment variables: `DATABASE_URL`, or dialect-specific families (`PG*`, `MYSQL_*`, `ORACLE_*`).
+1. Flags: `--engine`, `--host`, `--port`, `--user`, `--password`, `--database`, `--sslmode`.
+2. Connection URL: `--url` or a positional URL (`scheme://...`). `sslmode` / `ssl` query params are honored; `options=` is ignored (prevents session GUC injection).
+3. Environment variables: `DATABASE_URL`, or dialect-specific families (`PG*`, `MYSQL_*`, `ORACLE_*`). `PGSSLMODE` is honored when `--sslmode` and the URL omit it.
 
 Examples:
 

@@ -49,8 +49,9 @@ Precedence: flags → `--url` / positional URL → env.
 - **MySQL**: `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`
 - **Oracle**: `ORACLE_HOST`, `ORACLE_PORT`, `ORACLE_USER`, `ORACLE_PASSWORD`, `ORACLE_DATABASE`
 - **Generic**: `DATABASE_URL`
+- **TLS**: `--sslmode` or URL `sslmode=` / `ssl=` / `PGSSLMODE` (`disable|allow|prefer|require|verify-ca|verify-full`). URL `options=` is ignored.
 
-If multiple families are set without a URL, pass `--engine`. Row counts are catalog **estimates**.
+If multiple families are set without a URL, pass `--engine`. Row counts are catalog **estimates**. Prefer `DATABASE_URL` or env passwords over `--password` (flags show up in `ps`).
 
 ## Errors
 

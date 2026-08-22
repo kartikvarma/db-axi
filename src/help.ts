@@ -20,6 +20,7 @@ GLOBAL FLAGS
   --password   Database password
   --database   Database name
   --url        Connection URL
+  --sslmode    TLS mode (disable|allow|prefer|require|verify-ca|verify-full)
   --full       Show full cell content (no truncation)
   --limit      Row limit for query/sample (default: 100/10)
 

@@ -12,8 +12,28 @@ import {
   quoteIdent,
   stripTrailingSemi,
   isExplainSql,
+  CONNECT_TIMEOUT_MS,
+  STATEMENT_TIMEOUT_MS,
+  sslDriverOption,
 } from './types.js';
 import { toQueryError, toConnectionError, notFoundTable } from './errors.js';
+
+export function buildMysqlConnectionOptions(c: ConnectionConfig): mysql.ConnectionOptions {
+  const ssl = sslDriverOption(c.sslMode);
+  const opts: mysql.ConnectionOptions = {
+    host: c.host,
+    port: c.port,
+    user: c.user,
+    password: c.password,
+    database: c.database,
+    multipleStatements: false,
+    connectTimeout: CONNECT_TIMEOUT_MS,
+  };
+  if (ssl && typeof ssl === 'object') {
+    opts.ssl = ssl;
+  }
+  return opts;
+}
 
 class MySqlConnection implements Connection {
   constructor(private conn: mysql.Connection) {}
@@ -186,14 +206,13 @@ export const mysqlEngine: Engine = {
   name: 'mysql',
   async connect(c: ConnectionConfig) {
     try {
-      const conn = await mysql.createConnection({
-        host: c.host,
-        port: c.port,
-        user: c.user,
-        password: c.password,
-        database: c.database,
-      });
+      const conn = await mysql.createConnection(buildMysqlConnectionOptions(c));
       await conn.query('SET SESSION TRANSACTION READ ONLY');
+      try {
+        await conn.query(`SET SESSION MAX_EXECUTION_TIME = ${STATEMENT_TIMEOUT_MS}`);
+      } catch {
+        /* MySQL < 5.7.8 / MariaDB without the variable — session is still read-only */
+      }
       return new MySqlConnection(conn);
     } catch (err) {
       throw toConnectionError(err);

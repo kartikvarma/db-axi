@@ -12,6 +12,8 @@ import {
   quoteIdent,
   stripTrailingSemi,
   isExplainSql,
+  CONNECT_TIMEOUT_MS,
+  STATEMENT_TIMEOUT_MS,
 } from './types.js';
 import { toQueryError, toConnectionError, notFoundTable } from './errors.js';
 
@@ -210,7 +212,9 @@ export const oracleEngine: Engine = {
         user: c.user,
         password: c.password,
         connectionString: `${c.host}:${c.port}/${c.database || ''}`,
+        connectTimeout: Math.ceil(CONNECT_TIMEOUT_MS / 1000),
       });
+      conn.callTimeout = STATEMENT_TIMEOUT_MS;
       await conn.execute('SET TRANSACTION READ ONLY');
       return new OracleConnection(conn);
     } catch (err) {

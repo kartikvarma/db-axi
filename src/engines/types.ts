@@ -1,5 +1,11 @@
 export type EngineName = 'postgres' | 'mysql' | 'oracle';
 
+/** libpq-compatible sslmode values. `options=` from a URL is never honored. */
+export type SslMode = 'disable' | 'allow' | 'prefer' | 'require' | 'verify-ca' | 'verify-full';
+
+export const CONNECT_TIMEOUT_MS = 15_000;
+export const STATEMENT_TIMEOUT_MS = 30_000;
+
 export interface ConnectionConfig {
   engine: EngineName;
   host: string;
@@ -7,6 +13,18 @@ export interface ConnectionConfig {
   user: string;
   password?: string;
   database?: string;
+  sslMode?: SslMode;
+}
+
+/** Map sslmode to a driver TLS option. `undefined` leaves the driver default. */
+export function sslDriverOption(
+  mode: SslMode | undefined,
+): boolean | { rejectUnauthorized: boolean } | undefined {
+  if (!mode) return undefined;
+  if (mode === 'disable') return false;
+  if (mode === 'verify-ca' || mode === 'verify-full') return { rejectUnauthorized: true };
+  // allow / prefer / require: encrypt, do not verify CA (libpq `require`)
+  return { rejectUnauthorized: false };
 }
 
 export interface DatabaseInfo { name: string; tables: number; }

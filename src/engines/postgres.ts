@@ -12,8 +12,26 @@ import {
   quoteIdent,
   stripTrailingSemi,
   isExplainSql,
+  CONNECT_TIMEOUT_MS,
+  STATEMENT_TIMEOUT_MS,
+  sslDriverOption,
 } from './types.js';
 import { toQueryError, toConnectionError, notFoundTable } from './errors.js';
+
+export function buildPostgresClientConfig(c: ConnectionConfig): pg.ClientConfig {
+  return {
+    host: c.host,
+    port: c.port,
+    user: c.user,
+    password: c.password,
+    database: c.database,
+    connectionTimeoutMillis: CONNECT_TIMEOUT_MS,
+    statement_timeout: STATEMENT_TIMEOUT_MS,
+    query_timeout: STATEMENT_TIMEOUT_MS,
+    ssl: sslDriverOption(c.sslMode),
+    options: '-c default_transaction_read_only=on',
+  };
+}
 
 class PostgresConnection implements Connection {
   constructor(private client: pg.Client) {}
@@ -211,13 +229,7 @@ class PostgresConnection implements Connection {
 export const postgresEngine: Engine = {
   name: 'postgres',
   async connect(c: ConnectionConfig) {
-    const client = new pg.Client({
-      host: c.host,
-      port: c.port,
-      user: c.user,
-      password: c.password,
-      database: c.database,
-    });
+    const client = new pg.Client(buildPostgresClientConfig(c));
     try {
       await client.connect();
       await client.query('SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY');
